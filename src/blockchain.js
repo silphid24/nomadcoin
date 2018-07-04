@@ -1,6 +1,10 @@
 const CryptoJS = require("crypto-js"),
 	hexToBinary = require("hex-to-binary");
 
+const BLOCK_GENERATION_INTERVAL = 10;
+//In bitcoin case, it is 2016
+const DIFFICULTY_ADJUSTMENT_INTERVAL = 10;
+
 class Block{
 	constructor(index, hash, previousHash, timestamp, data, difficulty, nonce){
 		this.index = index;
@@ -59,14 +63,16 @@ const createNewBlock = data => {
 	const previousBlock = getNewestBlock();
 	const newBlockIndex = previousBlock.index + 1;
 	const newTimestamp = getTimestamp();
-
+	const difficulty = findDifficulty();
+	
+	/*
 	//create newHash with blockHeader's data
 	const newHash = createHash(
 		newBlockIndex, 
 		previousBlock.hash, 
 		newTimestamp, 
 		data
-	);
+	);*/
 
 	//if newHash data changed, this block is invalid.
 	const newBlock = findBlock(
@@ -74,8 +80,9 @@ const createNewBlock = data => {
 		previousBlock.hash,
 		newTimestamp,
 		data,
-		//test difficulty as 5
-		20
+		//test difficulty as 20
+		//20
+		difficulty
 	);
 
 	addBlockToChain(newBlock);
@@ -83,6 +90,39 @@ const createNewBlock = data => {
 	return newBlock;
 };
 
+
+const findDifficulty = () => {
+	const newestBlock = getNewestBlock();
+	if(newestBlock.index % DIFFICULTY_ADJUSTMENT_INTERVAL === 0 && newestBlock.index !== 0) {
+		//calculate new difficulty
+		return calculateNewDifficulty(newestBlock, getBlockchain());
+	} else {
+		return newestBlock.difficulty;
+	}
+};
+
+const calculateNewDifficulty = (newestBlock, blockchain) => {
+
+	// This case, 10 Blocks(DIFFICULTY_ADJUSTMENT_INTERVAL) before the newestBlock.
+	const lastCalculatedBlock = blockchain[blockchain.length - DIFFICULTY_ADJUSTMENT_INTERVAL];
+	//timeExpected for block create
+	const timeExpected = BLOCK_GENERATION_INTERVAL * DIFFICULTY_ADJUSTMENT_INTERVAL;
+	//Actual timeTaken for block create. 
+	const timeTaken = newestBlock.timestamp - lastCalculatedBlock.timestamp;
+
+	//if timeTaken less than timeExpected/2
+	if(timeTaken < timeExpected/2) {
+		//increase difficulty
+		return lastCalculatedBlock.difficulty + 1;
+
+	} else if (timeTaken > timeExpected * 2) {
+		//if it's hard to create block decrease difficulty
+		return lastCalculatedBlock.difficulty - 1;
+		//just keep the difficulty
+	} else {
+		return lastCalculatedBlock.difficulty;
+	}
+};
 
 const findBlock = (index, previousHash, timestamp, data, difficulty) => {
 	let nonce = 0;
@@ -128,7 +168,14 @@ const hashMatchesDifficulty = (hash, difficulty) => {
 //console.log(testBlock);
 
 //
-const getBlocksHash = (block) => createHash(block.index, block.previousHash, block.timestamp, block.data);
+const getBlocksHash = (block) => createHash(
+	block.index,
+	block.previousHash, 
+	block.timestamp, 
+	block.data,
+	block.difficulty,
+	block.nonce
+	);
 
 
 const isBlockValid = (candidateBlock, latestBlock) => {
