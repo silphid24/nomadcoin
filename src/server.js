@@ -34,7 +34,7 @@ const express = require("express"),
 		connectToPeers(peer);
 		//kill the connection.
 		res.send();
-	})
+	});
 
 	const server = app.listen(PORT, () => console.log("Nomadcoin HTTP Server running on port", PORT));
 

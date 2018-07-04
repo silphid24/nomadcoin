@@ -6,7 +6,7 @@ const WebSockets = require("ws"),
 //1. request latest block
 //2. we can requst all the blockchain to replace all the blocks(when it became behind)
 //3. we need to recieve the block
-const { getNewestBlock, isBlockStructureValid, replaceChain, getBlockchain } = Blockchain;
+const { getNewestBlock, isBlockStructureValid, replaceChain, getBlockchain, addBlockToChain } = Blockchain;
 
 
 const sockets = [];
@@ -128,7 +128,6 @@ const handleScoketMessages = ws => {
 };
 
 const handleBlockchainResponse = receivedBlocks => {
-
 	if (receivedBlocks.length === 0) {
 		console.log("Received blocks have a length of 0");
 		return;
@@ -148,7 +147,10 @@ const handleBlockchainResponse = receivedBlocks => {
 
 		//this case, one block ahead, so add block
 		if (newestBlock.hash === latestBlockReceived.previousHash){
-			addBlockToChain(latestBlockReceived);
+			if(addBlockToChain(latestBlockReceived)) {
+				broadcastNewBlock();
+			}
+			
 
 		}
 		//if we only got 1 block, and it's way behind, then replace the all block
@@ -169,6 +171,8 @@ const responseLatest = () => blockchainResponse([getNewestBlock()]);
 
 
 const responseAll = () => blockchainResponse(getBlockchain());
+
+const broadcastNewBlock = () =>sendMessageToAll(responseLatest());
 
 
 const handleSocketError = ws => {
@@ -198,5 +202,6 @@ const connectToPeers = newPeer => {
 
 module.exports = {
 	startP2PServer,
-	connectToPeers
+	connectToPeers,
+	broadcastNewBlock
 };
