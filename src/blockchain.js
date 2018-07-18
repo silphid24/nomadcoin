@@ -18,12 +18,11 @@ class Block{
 }
 
 
-
 const genesisBlock = new Block(
 	0,
 	"AC875B3A03941773BF37AEFB10588817FF90EED5B4855ACFDA3753F1E33915C6",
 	null,
-	1529047548984,
+	1530698609,
 	"This is the genesis!!",
 	0,
 	0
@@ -43,8 +42,8 @@ function getNewestBlock(){
 */
 
 
-
-const getTimestamp = () => new Date().getTime() / 1000;
+//Math.round - up
+const getTimestamp = () => Math.round(new Date().getTime() / 1000);
 
 const getBlockchain = () => blockchain;
 
@@ -175,8 +174,18 @@ const getBlocksHash = (block) => createHash(
 	block.data,
 	block.difficulty,
 	block.nonce
-	);
+);
 
+
+//Blockchain manipulate difficulty using timestamp. So, need to Valid it 
+const isTimeStampValid = (newBlock, oldBlock) => {
+	return (
+		//Check the oldBlock is less than 
+		oldBlock.timestamp - 60 < newBlock.timestamp && 
+		//Check the newblock.timestamp is less than realtime(computer time)
+		newBlock.timestamp - 60 < getTimestamp()
+	);
+};
 
 const isBlockValid = (candidateBlock, latestBlock) => {
 	if (!isBlockStructureValid(candidateBlock)){
@@ -195,6 +204,9 @@ const isBlockValid = (candidateBlock, latestBlock) => {
 
 	} else if (getBlocksHash(candidateBlock) !== candidateBlock.hash){
 		console.log("The hash of this block is invalid");
+		return false;
+	} else if (!isTimeStampValid(candidateBlock, latestBlock)) {
+		console.log("The timestamp of this block is dodgy");
 		return false;
 	}
 	return true;
@@ -237,8 +249,25 @@ const isChainValid = candidateChain => {
 	return true;
 };
 
+
+//To distinguish the chain which is more difficult than itself
+const sumDifficulty = anyBlockchain => 
+
+//anyBlockchain's inside we brought block.difficulty
+	anyBlockchain
+		//array of the difficulty
+		.map(block => block.difficulty
+		//another array of the difficulty^2 -> [4**2,3**2,5**2~~]
+		.map(difficulty => Math.pow(2, difficulty))
+		//sum all the value of list and then put it into stack.
+		// [1,2,3,4] -> 1+2 ->3+2 ->5+3~~ 
+		.reduce((a, b) => a + b));
+
+
 const replaceChain = candidateChain => {
-	if(isChainValid(candidateChain) && candidateChain.length > getBlockchain().length) {
+	//if(isChainValid(candidateChain) && candidateChain.length > getBlockchain().length) {
+		//candidate blockchain's difficulty is higher than now then replace blockchain
+	if(isChainValid(candidateChain) && sumDifficulty(candidateChain) > sumDifficulty(getBlockchain())) {
 		blockchain = candidateChain;
 		return true;
 	} else {
