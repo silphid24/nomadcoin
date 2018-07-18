@@ -85,5 +85,16 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
 };
 
 
-
+const updateUTxOuts = (newTxs, uTxOutList) => {
+	 //looping into all the transactions
+	 const newUTxOuts = newTxs.map(tx => {
+	 	//then, looping into all the output.
+	 	tx.txOuts.map(
+	 		(txOut, index) => {
+	 			//UST Output
+	 			new UTxOut(tx.id, index, txOut.address, txOut.amount);
+	 		});
+	 })
+	 .reduce((a,b) => a.contact(b), []);
+};
 
