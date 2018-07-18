@@ -1,7 +1,7 @@
 const CryptoJS = require("crypto-js"),
 	elliptic = require("elliptic");
-
-const ec = new EC("secp256k1");
+	utils = require("./utils")
+const ec = new elliptic.ec("secp256k1");
 
 //transaction Output
 class TxOut {
@@ -64,9 +64,9 @@ const getTxId = tx => {
 
 };
 
-
+//among the uTxOuts[] we try to find one of them. cause, we need to proove the money we have.
 const findUTxOut = (txOutId, txOutIndex, uTxOutList => {
-	return uTxOutList.find(uTxOut => uTxOut.txOutId === txOutId && uTxOut.txOutIndex === txOutIndex)
+	return uTxOutList.find(uTxOut => uTxOut.txOutId === txOutId && uTxOut.txOutIndex === txOutIndex);
 }
 
 
@@ -74,10 +74,14 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
 	const txIn = tx.txIn[txInIndex];
 	const dataToSign = tx.id;
 	//To Do: Find Tx
-	const referencedUTxOut = null;
+	const referencedUTxOut = findUTxOut(txIn.txOutId, tx.txOutIndex, uTxOuts);
 	if(referencedUTxOut === null) {
 		return;
 	}
+	// To do: Sign the txIn
+	const key = ec.keyFromPrivate(privateKey, "hex");
+	const signature = utils.toHexString(key.sign(dataToSign).toDER());
+	return signature;
 };
 
 
