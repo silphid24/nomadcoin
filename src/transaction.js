@@ -120,7 +120,68 @@ A(40) ---> TRANSACTION ---> ZZ(10)
                        ---> MM(30)
 */
 
-//const isTxStructureValid = () => {}
+const isTxInStructureValid = (txIn) => {
+	if(txIn === null) {
+		return false;
+	} else if (typeof txIn.signature !== "string") {
+		return false;
+	} else if (typeof txIn.txOutId !== "string") {
+		return false;
+	} else if (typeof txIn.txOutIndex !== "number") {
+		return false;
+	} else {
+		return true;
+	}
+}
 
+const isAddressValid =  (address) => {
+	if(address.length !== 130){
+		return false;
+	} else if (address.match("^[a-fA-F0-9]+$") === null) {
+		return false;
+	} else if (!address.startsWith("04")){ 
+		return false;
+	} else {
+		return true;
+	}
+}
 
+const isTxOutStructureValid = (txOut) => {
+	if(txout === null){
+		return false;
+	} else if (typeof txOut.address !== "string"){
+		return false;
+	} else if (!isAddressValid(txOut.address)) {
+		return false;
+	} else if (typeof txOut.amount !== "number"){
+		return false;
+	} else {
+		return true;
+	}
+}
+
+const isTxStructureValid = (tx) => {
+
+	if (typeof tx.id !== "string") {
+		console.log("Tx ID is not valid");
+		return false;
+	//Check the type of tx.txIns as Array	
+	} else if(!(tx.txIns instanceof Array)) {
+		console.log("The txIns are not an array");
+		return false;
+	} else if (!tx.txIns.map(isTxInStructureValid).reduce((a,b) => a && b, true)) {
+		console.log("The structure of one of the txIn is not vaild");
+	} else if (!(tx.txOuts instanceof Array)) {
+		console.log("The txOuts are not an array");
+		return false;
+	} else if (!tx.txOut.map(isTxOutStructureValid).reduce((a,b) => a && b, true)){
+		console.log("The structure of one of the txOut is not vaild");
+		return false;
+	} else {
+		return true;
+	}
+};
+
+//[true, true, false, true, false].reduce()
+//true && true so on. basically check the list that all of them are true.
 
