@@ -95,6 +95,32 @@ const updateUTxOuts = (newTxs, uTxOutList) => {
 	 			new UTxOut(tx.id, index, txOut.address, txOut.amount);
 	 		});
 	 })
-	 .reduce((a,b) => a.contact(b), []);
+	 .reduce((a,b) => a.concat(b), []);
+
+	// All of the spent TxOutput has to be empty. 
+	//ex) if i send the 10 coin by using 50. TxOutput 50 should be empty after transaction. 40 and 10 txOutput only left.
+	const spentTxOuts = newTxs
+		.map(tx => tx.txIns)
+		.reduce((a,b) => a.concat(b), []) //At this statment, Full of transaction inputs array.
+		.map(txIn => new UTxOut(txIn.txOutId, txIn.txOutIndex, "", 0)); // When the transaction input come in, delete the amount and address which is used here.
+
+	//if the output is used, find it on the unspent list, then remove from the Unspent output list.
+	const resultingUTxOuts = uTxOutList
+		.filter(uTxO => !findUTxOut(uTxO.txOutId, uTxO.txOutIndex, spentTxOuts)) //remove the spentTxOuts(filtering)
+		.concat(newUTxOuts); //and then, concatenate the new unspent outputs.
+
+	return resultingUTxOuts;
+
 };
+
+/*
+[A(40), A, B, C, D, E, F, ZZ, MM]
+
+A(40) ---> TRANSACTION ---> ZZ(10)
+                       ---> MM(30)
+*/
+
+//const isTxStructureValid = () => {}
+
+
 
