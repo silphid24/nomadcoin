@@ -3,6 +3,9 @@ const CryptoJS = require("crypto-js"),
 	utils = require("./utils")
 const ec = new elliptic.ec("secp256k1");
 
+const COINBASE_AMOUNT = 50;
+
+
 //transaction Output
 class TxOut {
 	constructor (address, amount){
@@ -182,6 +185,59 @@ const isTxStructureValid = (tx) => {
 	}
 };
 
+//TxInput reference list of txOutput's id and index.
+const getAmountInTxIn = (txIn, uTxOutList) => findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList).amount;
+
+
+const validateTx = (tx, uTxOutList) => {
+	if(!isTxStructureValid(tx)){
+		return false;
+	}
+
+	if(getTxId(tx) !== tx.id) {
+		return false;
+	}
+
+	const hasValidTxIns = tx.txIns.map();
+
+	if (!hasValidTxIns) {
+		return false;
+	}
+
+	//amount input -> reference txOutput
+	const amountInTxIns = tx.txIns
+	.map(txIn => getAmountInTxIn(txIn, uTxOutList))
+	.reduce((a, b) => a + b, 0);//todo
+
+	const amountInTxOuts = tx.txOuts
+	.map(txOut => txOut.amount) //return full of array of txoutput amount.
+	.reduce(a, b) => a + b, 0); // a+b and 
+
+	if(amountInTxIns !== amountInTxOuts){
+		return false;
+	} else {
+		return true;s
+	}
+};
+
 //[true, true, false, true, false].reduce()
 //true && true so on. basically check the list that all of them are true.
 
+
+const validateCoinbaseTx = (tx, blockIndex) => {
+	if(getTxId(tx) !== tx.id){
+		return false;
+	} else if (tx.txIns.length !== 1){
+		return false;
+	} else if (tx.txIns[0].txOutIndex !== blockIndex){
+		return false;
+	} else if (tx.txOuts.length !== 1){
+		return false;
+	} else if (tx.txOuts[0].amount !== COINBASE_AMOUNT){
+		return false;
+	} else {
+		return true;
+	}
+
+
+};
